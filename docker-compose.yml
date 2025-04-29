@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # フロントエンドサービス
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  # バックエンドサービス
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - PORT=8000
+      - NODE_ENV=development
+      - FRONTEND_URL=http://localhost:3000
+      - DIFY_API_BASE_URL=${DIFY_API_BASE_URL}
+      - DIFY_API_KEY=${DIFY_API_KEY}
+      - DIFY_APP_ID=${DIFY_APP_ID}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=ai_concierge
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  # PostgreSQLデータベース
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=ai_concierge
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
